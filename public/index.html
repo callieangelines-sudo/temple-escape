@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>The Lost Temple of Solara — Co-op Escape Adventure</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☀️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Nunito:wght@500;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    { "imports": {
+        "three": "/vendor/three/build/three.module.js",
+        "three/addons/": "/vendor/three/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <!-- ============ LOBBY ============ -->
+  <section id="lobby" class="screen">
+    <div class="sunrays"></div>
+    <div class="leaves"></div>
+    <div class="panel lobby-panel">
+      <div id="pinBanner" class="pin-banner hidden">🎟️ Joining event <b id="pinBannerPin"></b> — make your explorer, then press <b>Join</b>!</div>
+      <p class="eyebrow">A co-op escape adventure · 1–6 explorers</p>
+      <h1 class="title">The Lost Temple<br /><span>of Solara</span></h1>
+
+      <div class="avatar-maker">
+        <div class="preview-wrap">
+          <canvas id="avatarPreview" width="220" height="240"></canvas>
+          <div class="preview-name" id="previewName">Explorer</div>
+        </div>
+        <div class="avatar-options">
+          <label class="field">
+            <span id="nameLabel">Explorer name</span>
+            <input id="nameInput" maxlength="16" placeholder="Type your name" autocomplete="off" />
+          </label>
+          <div class="field">
+            <span>Outfit colour</span>
+            <div id="colorPick" class="swatches"></div>
+          </div>
+          <div class="field">
+            <span>Headgear</span>
+            <div id="hatPick" class="hats"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="join-row big">
+        <input id="codeInput" maxlength="6" placeholder="Event PIN or code" autocomplete="off" inputmode="text" />
+        <button id="joinBtn" class="btn primary join">Join ➜</button>
+      </div>
+      <p id="lobbyError" class="error"></p>
+      <div class="divider"><span>or</span></div>
+      <div class="alt-row">
+        <button id="createBtn" class="btn">⛺ Private expedition with friends</button>
+        <button id="hostBtn" class="btn teacher">👩‍🏫 Host a school event</button>
+      </div>
+      <button id="resumeHostBtn" class="btn small ghost hidden">↩ Resume hosting event <b id="resumePin"></b></button>
+    </div>
+  </section>
+
+  <!-- ============ WAITING ROOM ============ -->
+  <section id="waiting" class="screen hidden">
+    <div class="sunrays"></div>
+    <div class="leaves"></div>
+    <div class="panel wait-panel">
+      <p class="eyebrow">Share this join code</p>
+      <div id="roomCodeBig" class="code-big">-----</div>
+      <button id="copyCode" class="btn small ghost">📋 Copy code</button>
+
+      <div class="story">
+        <p>Legendary explorer <b>Captain Amelia Reyes</b> set out to find the <b>Sunstone</b>, a treasure hidden
+          in the Lost Temple of Solara, and never came back.</p>
+        <p>With her old journal in hand, your team follows her trail deep into the jungle. As you step inside,
+          the great stone door <b>rumbles shut</b> behind you! Crack the temple's ancient puzzles,
+          work as a team, and find your way back to daylight <b>together</b>.</p>
+      </div>
+
+      <h3>Your expedition</h3>
+      <ul id="playerList" class="player-list"></ul>
+
+      <div class="controls-help">
+        <div><b>💻 Computer:</b> WASD move · mouse look · <kbd>E</kbd> interact · <kbd>Space</kbd> jump · <kbd>Shift</kbd> run · <kbd>T</kbd> chat · <kbd>J</kbd> journal · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> emotes</div>
+        <div><b>📱 Phone/tablet:</b> left thumb to move · drag right side to look · tap <b>USE</b></div>
+      </div>
+
+      <button id="startBtn" class="btn primary hidden">🗺️ Begin the adventure</button>
+      <p id="waitMsg" class="muted">Waiting for the host to start…</p>
+    </div>
+  </section>
+
+  <!-- ============ STUDENT: WAITING FOR TEACHER ============ -->
+  <section id="teams" class="screen hidden">
+    <div class="sunrays"></div>
+    <div class="leaves"></div>
+    <div class="panel teams-panel">
+      <p class="eyebrow">Event PIN <b id="teamsPin">------</b></p>
+      <h1 class="title small-title"><span id="teamsName">Team</span> is in! 🎉</h1>
+      <div class="my-team">
+        <div class="muted" id="myTeamWait">Waiting for your teacher to start… ⏳</div>
+      </div>
+      <h3>Teams in this class</h3>
+      <div id="teamGrid" class="chips center"></div>
+    </div>
+  </section>
+
+  <!-- ============ TEACHER: HOST DASHBOARD ============ -->
+  <section id="host" class="screen hidden">
+    <div class="sunrays"></div>
+    <div class="host-wrap">
+      <header class="host-head">
+        <div class="host-title">☀️ The Lost Temple of Solara <span class="tag">Teacher view</span></div>
+        <div class="host-actions">
+          <button id="hMusic" class="btn small ghost">🎵 Music</button>
+          <button id="hChat" class="btn small ghost">💬 Chat: on</button>
+          <button id="hLock" class="btn small ghost">🔓 Joining open</button>
+          <button id="hFull" class="btn small ghost">⛶ Fullscreen</button>
+          <button id="hEnd" class="btn small danger">End event</button>
+        </div>
+      </header>
+
+      <div id="hostLobby" class="host-lobby">
+        <div class="join-card">
+          <div class="join-step">1. Go to</div>
+          <div id="hostUrl" class="host-url">site</div>
+          <div class="join-step">2. Enter the PIN</div>
+          <div id="hostPin" class="host-pin">------</div>
+          <img id="hostQr" class="qr" alt="QR code to join" />
+          <div class="muted">or scan to join</div>
+        </div>
+        <div class="lobby-side">
+          <div class="counts"><span><b id="hTeams">0</b> teams joined</span></div>
+          <div id="hostTeams" class="host-teams"></div>
+          <button id="hStart" class="btn primary huge">🚀 Start the adventure for everyone</button>
+        </div>
+      </div>
+
+      <div id="hostLive" class="host-live hidden">
+        <div class="live-top">
+          <div class="live-timer"><span>Time</span><b id="hTimer">00:00</b></div>
+          <div class="live-pin">Late? Join with PIN <b id="hPinSmall"></b></div>
+          <div class="live-done"><span>Escaped</span><b id="hDone">0/0</b></div>
+          <button id="hPodium" class="btn">🏆 Show podium</button>
+          <button id="hReset" class="btn ghost">🔁 Play again</button>
+        </div>
+        <div class="board-head"><span>#</span><span>Team</span><span>Progress</span><span>Hints</span><span>Time</span></div>
+        <div id="board" class="board"></div>
+      </div>
+
+      <div id="podium" class="podium hidden">
+        <h1 class="title">🏆 Expedition <span>Champions</span></h1>
+        <div id="podiumSteps" class="podium-steps"></div>
+        <button id="podiumClose" class="btn">Back to leaderboard</button>
+      </div>
+      <div id="hostToasts" class="host-toasts"></div>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="game" class="hidden">
+    <div id="canvasWrap"></div>
+    <div id="vignette"></div>
+    <div id="flash"></div>
+    <div id="crosshair"></div>
+    <div id="prompt" class="hidden"></div>
+    <div id="roomTitle"></div>
+
+    <div id="hudTop">
+      <div class="hud-box">
+        <div class="hud-label"><span id="hudLabel">Code</span> <b id="hudCode">-----</b></div>
+        <div id="timer">00:00</div>
+      </div>
+      <div class="hud-box objective">
+        <div class="hud-label">🧭 Objective</div>
+        <div id="objective">Explore the temple.</div>
+      </div>
+      <div class="hud-right">
+        <button id="journalBtn" class="btn small">📖 <span class="lbl">Journal</span> <b id="journalCount">0</b></button>
+        <button id="hintBtn" class="btn small">💡 <span class="lbl">Hint</span></button>
+        <button id="musicBtn" class="btn small ghost" title="Music">🎵</button>
+        <button id="muteBtn" class="btn small ghost" title="Sound">🔊</button>
+      </div>
+    </div>
+
+    <div id="teamList"></div>
+    <div id="toasts"></div>
+
+    <div id="emotes">
+      <button data-emote="wave" title="Wave (1)">👋</button>
+      <button data-emote="cheer" title="Cheer (2)">🎉</button>
+      <button data-emote="think" title="Hmm (3)">🤔</button>
+    </div>
+
+    <div id="chat">
+      <div id="chatLog"></div>
+      <input id="chatInput" maxlength="140" placeholder="Press Enter to chat…" autocomplete="off" />
+    </div>
+
+    <div id="clickToPlay" class="overlay hidden">
+      <div class="overlay-card">
+        <h2>Click to explore</h2>
+        <p>WASD move · mouse look · <kbd>E</kbd> interact · <kbd>Space</kbd> jump · <kbd>Esc</kbd> pause</p>
+      </div>
+    </div>
+
+    <div id="touchUI" class="hidden">
+      <div id="joyBase"><div id="joyKnob"></div></div>
+      <button id="tUse" class="tbtn use">USE</button>
+      <button id="tJump" class="tbtn">⤒</button>
+      <button id="tChat" class="tbtn">💬</button>
+    </div>
+
+    <div id="modal" class="overlay hidden">
+      <div class="modal-card">
+        <button id="modalClose" class="close-x">✕</button>
+        <h2 id="mTitle"></h2>
+        <div id="mBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ENDING ============ -->
+  <section id="ending" class="screen hidden">
+    <canvas id="confetti"></canvas>
+    <div class="sunrise"></div>
+    <div class="panel end-panel">
+      <p class="eyebrow">Expedition complete</p>
+      <h1 class="title">You found the <span>Sunstone!</span></h1>
+      <div class="stats">
+        <div><span>Time</span><b id="endTime">--:--</b></div>
+        <div><span>Hints</span><b id="endHints">0</b></div>
+        <div><span id="endRankLabel">Rank</span><b id="endRank">⭐</b></div>
+      </div>
+      <p id="endTeam" class="muted"></p>
+      <div class="story">
+        <p>Sunlight floods over you as you step outside. On a mossy rock sits Captain Reyes, grinning,
+          with the glowing Sunstone in her hands.</p>
+        <p>"Took you long enough! This temple only opens for explorers who work <i>together</i>.
+          Welcome to the crew!"</p>
+      </div>
+      <button id="againBtn" class="btn primary hidden">🔁 Play again</button>
+      <p id="endWait" class="muted">The host can restart the expedition.</p>
+      <p id="endEvent" class="muted hidden">🎉 Look at the big screen to see the leaderboard!</p>
+    </div>
+  </section>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
